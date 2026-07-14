@@ -13,7 +13,7 @@
 
         body {
             margin: 0;
-            background: #202123;
+            background: #ffffff;
             color: white;
             display: flex;
             flex-direction: column;
@@ -96,40 +96,64 @@ function add(role, text){
 
     chat.scrollTop = chat.scrollHeight;
 }
+    async function send(){
 
-async function send(){
+        if(input.value.trim() === "") return;
 
-    if(input.value.trim() === "") return;
+        const text = input.value;
 
-    const text = input.value;
+        input.value = "";
 
-    input.value = "";
+        messages.push({
+            role: "user",
+            content: text
+        });
 
-    messages.push({
-        role: "user",
-        content: text
-    });
+        add("user", text);
 
-    add("user", text);
+        const res = await fetch("/api/chat",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                messages
+            })
+        });
 
-    const res = await fetch("/api/chat",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-            messages
-        })
-    });
 
-    const data = await res.json();
+        const div = document.createElement("div");
+        div.className = "msg assistant";
+        chat.appendChild(div);
 
-    messages.push(data.message);
 
-    add("assistant", data.message.content);
+        let answer = "";
 
-}
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
 
+
+        while(true){
+
+            const {done, value} = await reader.read();
+
+            if(done) break;
+
+            const text = decoder.decode(value);
+
+            answer += text;
+
+            div.textContent = answer;
+
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+
+        messages.push({
+            role:"assistant",
+            content:answer
+        });
+    }
 input.addEventListener("keydown",e=>{
     if(e.key==="Enter"){
         send();

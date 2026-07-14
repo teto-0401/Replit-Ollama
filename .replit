@@ -1,7 +1,7 @@
+run = "pnpm run dev"
 modules = ["nodejs-20"]
 [agent]
 expertMode = true
-
 
 [[ports]]
 localPort = 3000

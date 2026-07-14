@@ -9,19 +9,24 @@ app.use(express.json());
 
 app.post("/api/chat", async (req, res) => {
     try {
-        const response = await ollama.chat({
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.setHeader("Transfer-Encoding", "chunked");
+
+        const stream = await ollama.chat({
             model: "qwen2.5:1.5b",
-            messages: req.body.messages
+            messages: req.body.messages,
+            stream: true
         });
 
-        res.json(response);
+        for await (const part of stream) {
+            res.write(part.message.content);
+        }
+
+        res.end();
 
     } catch (err) {
         console.error(err);
-
-        res.status(500).json({
-            error: err.message
-        });
+        res.status(500).end(err.message);
     }
 });
 
